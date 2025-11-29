@@ -1,0 +1,24 @@
+{
+  "name": "RPR CIS Dashboard",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+  "forwardPorts": [5000],
+  "postCreateCommand": "pip install --upgrade pip && if [ -f requirements.txt ]; then pip install -r requirements.txt; fi && npm install -g firebase-tools",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        "toba.vsfire"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      }
+    }
+  }
+}
