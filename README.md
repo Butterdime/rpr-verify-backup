@@ -1,103 +1,315 @@
 # RPR CIS Dashboard v6.0
-## Complete Implementation with Gemini Integration
 
-### Overview
-This project implements a comprehensive Customer Identity Verification (CIS) system with advanced document quality assessment, OCR extraction, mismatch detection, and dispute management.
+A comprehensive Customer Identity Verification (CIS) system with advanced document quality assessment, OCR extraction, mismatch detection, and dispute management.
 
-### Features
-- Document quality assessment using multi-metric approach (DPI, contrast, rotation, blur)
-- OCR extraction with confidence scoring and calibration
-- Mismatch detection and risk tiering (Tier 1/2/3)
-- Dispute management workflow with re-verification
-- Reporting and 7-year immutable audit trail
-- Web-based UI for verification and dispute workflows
+## Table of Contents
 
-### Project Structure
+- [Overview](#overview)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Usage](#usage)
+  - [Web Interface](#web-interface)
+  - [Batch Processing](#batch-processing)
+  - [Report Generation](#report-generation)
+- [API Reference](#api-reference)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+
+## Overview
+
+The RPR CIS Dashboard provides an end-to-end solution for customer identity verification, featuring:
+
+- **Document Quality Assessment**: Automated analysis of document image quality using multi-metric approach
+- **OCR Extraction**: Tesseract-based text extraction with confidence scoring
+- **Mismatch Detection**: Intelligent comparison of document fields with severity classification
+- **Risk Assessment**: Three-tier risk classification (Low/Moderate/High)
+- **Dispute Management**: Complete workflow for handling verification disputes
+- **Audit Trail**: 7-year immutable audit log with SHA-256 integrity verification
+- **Compliance Reporting**: External certificates and internal audit reports
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| Quality Assessment | DPI, contrast, rotation, blur, and brightness analysis |
+| Document Enhancement | CLAHE contrast enhancement, denoising, perspective correction |
+| OCR Extraction | Structured data extraction (Name, DOB, Address, ABN, ACN, Postcode) |
+| Mismatch Detection | Fuzzy string matching with field-specific thresholds |
+| Risk Tiering | Tier 1 (Low), Tier 2 (Moderate), Tier 3 (High) classification |
+| Dispute Workflow | Create, triage, re-verify, and resolve disputes |
+| Audit Trail | SHA-256 hashed immutable records with 7-year retention |
+| Web Interface | Flask-based UI for document upload and verification |
+
+## Prerequisites
+
+Before installation, ensure you have:
+
+- **Python 3.9+** (tested with Python 3.13)
+- **Tesseract OCR Engine** (required for text extraction)
+  - macOS: `brew install tesseract`
+  - Ubuntu/Debian: `sudo apt-get install tesseract-ocr`
+  - Windows: Download from [UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki)
+
+## Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Butterdime/rpr-cis-dashboard.git
+   cd rpr-cis-dashboard
+   ```
+
+2. **Create and activate a virtual environment**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   # or
+   venv\Scripts\activate     # Windows
+   ```
+
+3. **Install Python dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Verify Tesseract installation**
+   ```bash
+   tesseract --version
+   ```
+
+5. **Configure Tesseract path** (if not in system PATH)
+   
+   Edit `src/config.py` and update the `tesseract_cmd` path:
+   ```python
+   self.ocr_config = {
+       'tesseract_cmd': '/usr/local/bin/tesseract',  # Update this path
+       'confidence_threshold': 60
+   }
+   ```
+
+## Quick Start
+
+1. **Start the web application**
+   ```bash
+   python ui/app.py
+   ```
+
+2. **Open your browser** and navigate to `http://localhost:5000`
+
+3. **Upload documents** for verification via the web interface
+
+## Project Structure
+
 ```
 rpr-cis-dashboard/
-├── src/
-│   ├── main.py                    [Entry point]
-│   ├── config.py                  [Configuration]
-│   ├── database.py                [SQLite setup]
+├── src/                           # Source code
+│   ├── main.py                    # Entry point
+│   ├── config.py                  # Configuration settings
+│   ├── database.py                # SQLite database handler
 │   └── modules/
-│       ├── __init__.py
-│       ├── document_processor.py  [Quality + Enhancement + OCR]
-│       ├── mismatch_detector.py   [Mismatch detection + Risk]
-│       ├── dispute_manager.py     [Dispute workflows]
-│       ├── report_generator.py    [Report generation]
-│       └── audit_trail.py         [7-year audit]
-├── ui/
-│   ├── app.py                     [Flask UI]
-│   ├── templates/                 [HTML templates]
-│   └── static/
-│       ├── css/                   [Styling]
-│       └── js/                    [UI interactions]
-├── tests/
+│       ├── document_processor.py  # Quality assessment, enhancement, OCR
+│       ├── mismatch_detector.py   # Mismatch detection and risk assessment
+│       ├── dispute_manager.py     # Dispute workflow management
+│       ├── report_generator.py    # Report generation
+│       └── audit_trail.py         # 7-year immutable audit trail
+├── ui/                            # Web interface
+│   ├── app.py                     # Flask application
+│   ├── templates/                 # HTML templates
+│   └── static/                    # CSS and JavaScript
+├── templates/                     # Report templates
+│   └── report_template.html       # HTML report template
+├── tests/                         # Unit tests
 │   ├── test_quality.py
 │   ├── test_ocr.py
 │   ├── test_mismatch.py
 │   └── test_dispute.py
-├── data/
-│   ├── documents/                 [Uploaded docs]
-│   ├── database.db                [SQLite]
-│   └── audit_trail/               [7-year logs]
-├── requirements.txt               [Dependencies]
-└── README.md                      [Documentation]
+├── data/                          # Runtime data (auto-created)
+│   ├── documents/                 # Uploaded documents
+│   └── audit_trail/               # Audit log files
+├── requirements.txt               # Python dependencies
+└── README.md                      # This file
 ```
 
-### Installation
-1. Navigate to the project directory
-2. Create virtual environment: `python3 -m venv venv`
-3. Activate: `source venv/bin/activate`
-4. Install dependencies: `pip install -r requirements.txt`
-5. Run the application: `python ui/app.py`
+## Usage
 
-### Dependencies
-- opencv-python
-- pytesseract
-- pillow
-- numpy
-- flask
-- werkzeug
+### Web Interface
 
-### Implementation Status
-✅ **COMPLETE** - All modules implemented and integrated
+The web interface provides an intuitive workflow for document verification:
 
-**Completed Tasks:**
-- ✅ Project Setup (30 minutes)
-- ✅ Document Quality Assessment (4 hours)
-- ✅ Document Enhancement & OCR (4 hours)
-- ✅ Mismatch Detection & Risk Assessment (3 hours)
-- ✅ Dispute Management Module (4-5 hours)
-- ✅ Reporting & Audit Trail (3-4 hours)
-- ✅ User Interface (3-4 hours)
-- ✅ Testing & Documentation (2-3 hours)
+1. **Home Page** (`/`): Overview and navigation
+2. **Upload** (`/upload`): Upload 2+ documents for verification
+3. **Verification Result** (`/verify`): View quality scores, mismatches, and risk tier
+4. **Dispute** (`/dispute`): Submit disputes with additional documentation
+5. **Reports** (`/report/<id>`): Generate verification reports
 
-**Total Implementation Time:** 22-26 hours (as planned)
+### Batch Processing
 
-### Key Components
-1. **DocumentQualityAssessor**: Multi-metric quality assessment (DPI, contrast, rotation, blur, brightness)
-2. **DocumentEnhancer**: Preprocessing pipeline with CLAHE, denoising, perspective correction
-3. **OCRExtractor**: Tesseract integration with confidence scoring and structured data extraction
-4. **MismatchDetector**: Fuzzy string matching with field-specific severity classification
-5. **RiskAssessor**: Tier-based risk assessment (1=Low, 2=Moderate, 3=High)
-6. **DisputeManager**: Complete dispute workflow with re-verification and resolution
-7. **ReportGenerator**: External/internal reports and compliance summaries
-8. **AuditTrail**: 7-year immutable audit trail with integrity verification
-9. **Flask UI**: Web interface for document upload, verification, and dispute management
+Process multiple documents from the command line:
 
-### Validation
-- All core modules implemented with comprehensive error handling
-- Unit tests created for all major components
-- Web UI with responsive design and user-friendly workflows
-- SQLite database with proper schema and relationships
-- Audit trail with SHA-256 hashing for immutability
+```bash
+# Create input and output directories
+mkdir -p input_folder output_folder
 
-### Next Steps
-1. Install Tesseract OCR engine: `brew install tesseract`
-2. Configure Tesseract path in config.py if needed
-3. Run tests: `python -m unittest discover tests/`
-4. Start application: `python ui/app.py`
-5. Access UI at http://localhost:5000
+# Place documents in input_folder, then run:
+python src/modules/document_processor.py \
+  --batch input_folder/ \
+  --output output_folder/
+```
 
-**Status:** ✅ Implementation Complete - Ready for Testing and Deployment
+**Supported file formats**: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.tiff`
+
+**Output**:
+- Enhanced images: `output_folder/enhanced_*.jpg`
+- JSON results: `output_folder/*_result.json`
+
+### Report Generation
+
+Generate HTML reports from processed documents:
+
+```bash
+python src/modules/report_generator.py \
+  --input output_folder/ \
+  --template templates/report_template.html \
+  --output html_reports/
+```
+
+## API Reference
+
+### DocumentQualityAssessor
+
+Assesses document image quality using multiple metrics.
+
+```python
+from modules.document_processor import DocumentQualityAssessor
+
+assessor = DocumentQualityAssessor()
+result = assessor.assess_document_quality('path/to/image.jpg')
+
+# Returns:
+# {
+#     'success': True,
+#     'score': 85,           # 0-100 quality score
+#     'level': 'GOOD',       # EXCELLENT/GOOD/ACCEPTABLE/POOR
+#     'metrics': {
+#         'dpi': {'dpi': 200, 'severity': 'GREEN', ...},
+#         'contrast': {'contrast': 75.5, 'severity': 'GREEN', ...},
+#         'rotation': {'rotation': 0.5, 'severity': 'GREEN', ...},
+#         'blur': {'blur': 72.3, 'severity': 'GREEN', ...},
+#         'brightness': {'brightness': 150, 'severity': 'GREEN', ...}
+#     }
+# }
+```
+
+### MismatchDetector
+
+Detects mismatches between document fields.
+
+```python
+from modules.mismatch_detector import MismatchDetector, RiskAssessor
+
+detector = MismatchDetector()
+mismatches = detector.detect_mismatches(doc1_fields, doc2_fields)
+
+risk_assessor = RiskAssessor()
+risk = risk_assessor.assess_risk_tier(mismatches, ocr_quality=85)
+
+# risk['tier']: 1 (Low), 2 (Moderate), or 3 (High)
+# risk['decision']: 'APPROVE', 'ESCALATE', or 'REJECT'
+```
+
+### DisputeManager
+
+Manages the dispute workflow.
+
+```python
+from modules.dispute_manager import DisputeManager
+
+manager = DisputeManager(database)
+dispute = manager.create_dispute(verification_id, reason, additional_docs)
+triage = manager.perform_dispute_triage(dispute_id, original_assessment)
+resolution = manager.resolve_dispute(dispute_id, 'APPROVED', 'Documents verified')
+```
+
+## Configuration
+
+Configuration is managed in `src/config.py`:
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `database_path` | SQLite database location | `data/database.db` |
+| `upload_folder` | Document upload directory | `data/documents` |
+| `audit_folder` | Audit trail directory | `data/audit_trail` |
+| `quality_thresholds.dpi` | DPI thresholds | min: 100, target: 200 |
+| `quality_thresholds.contrast` | Contrast thresholds | min: 60%, target: 75% |
+| `quality_thresholds.rotation` | Rotation thresholds | max: 5°, target: 1° |
+| `ocr_config.tesseract_cmd` | Tesseract executable path | `/usr/local/bin/tesseract` |
+| `ocr_config.confidence_threshold` | Minimum OCR confidence | 60 |
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+python -m unittest discover tests/
+
+# Run specific test file
+python -m unittest tests/test_quality.py
+
+# Run with verbose output
+python -m unittest discover tests/ -v
+```
+
+## Troubleshooting
+
+### Tesseract not found
+
+**Error**: `pytesseract.pytesseract.TesseractNotFoundError`
+
+**Solution**: Install Tesseract OCR and update the path in `src/config.py`:
+```python
+self.ocr_config = {
+    'tesseract_cmd': '/path/to/tesseract',
+    ...
+}
+```
+
+### Low OCR confidence
+
+**Issue**: OCR extraction returns low confidence scores
+
+**Solutions**:
+1. Ensure documents meet minimum quality requirements (DPI ≥ 100)
+2. Use the DocumentEnhancer to preprocess images before OCR
+3. Adjust the confidence threshold in config.py
+
+### Import errors when running tests
+
+**Error**: `ModuleNotFoundError: No module named 'modules'`
+
+**Solution**: Run tests from the `tests/` directory or update PYTHONPATH:
+```bash
+cd tests
+python -m unittest test_quality.py
+# or
+PYTHONPATH=src python -m unittest discover tests/
+```
+
+### Database errors
+
+**Error**: Database-related errors on first run
+
+**Solution**: The database and required directories are created automatically. Ensure write permissions in the project directory.
+
+---
+
+## License
+
+This project is proprietary software. All rights reserved.
+
+## Support
+
+For issues and questions, please open a GitHub issue or contact the development team.
