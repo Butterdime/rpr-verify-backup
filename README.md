@@ -100,4 +100,10 @@ rpr-cis-dashboard/
 4. Start application: `python ui/app.py`
 5. Access UI at http://localhost:5000
 
+### Firebase Integration (Optional)
+To integrate Google Firebase for cloud database, authentication, or storage:
+1. Follow the setup guide in [docs/FIREBASE_SETUP.md](docs/FIREBASE_SETUP.md)
+2. Add `firebase-admin` to requirements.txt
+3. Configure your Firebase credentials (see guide for details)
+
 **Status:** ✅ Implementation Complete - Ready for Testing and Deployment
