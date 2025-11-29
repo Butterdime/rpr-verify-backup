@@ -248,6 +248,27 @@ Configuration is managed in `src/config.py`:
 | `ocr_config.tesseract_cmd` | Tesseract executable path | `/usr/local/bin/tesseract` |
 | `ocr_config.confidence_threshold` | Minimum OCR confidence | 60 |
 
+**Example configuration structure** (in `src/config.py`):
+
+```python
+class Config:
+    def __init__(self):
+        self.database_path = 'data/database.db'
+        self.upload_folder = 'data/documents'
+        self.audit_folder = 'data/audit_trail'
+        
+        self.quality_thresholds = {
+            'dpi': {'min': 100, 'target': 200},
+            'contrast': {'min': 60, 'target': 75},
+            'rotation': {'max': 5, 'target': 1}
+        }
+        
+        self.ocr_config = {
+            'tesseract_cmd': '/usr/local/bin/tesseract',
+            'confidence_threshold': 60
+        }
+```
+
 ## Testing
 
 Run the test suite:
@@ -290,12 +311,17 @@ self.ocr_config = {
 
 **Error**: `ModuleNotFoundError: No module named 'modules'`
 
-**Solution**: Run tests from the `tests/` directory or update PYTHONPATH:
+**Solution**: Run tests from the project root with PYTHONPATH set:
 ```bash
-cd tests
-python -m unittest test_quality.py
-# or
+# Option 1: Set PYTHONPATH and run from project root
 PYTHONPATH=src python -m unittest discover tests/
+
+# Option 2: Run specific test file
+PYTHONPATH=src python -m unittest tests.test_quality
+
+# Option 3: Navigate to tests directory first
+cd tests
+python -m unittest test_quality
 ```
 
 ### Database errors
