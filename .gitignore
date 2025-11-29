@@ -37,4 +37,8 @@ logs/
 *.tmp
 *.temp
 
+# Google Drive API credentials (sensitive)
+credentials.json
+token.json
+
 

@@ -22,6 +22,7 @@ rpr-cis-dashboard/
 │   └── modules/
 │       ├── __init__.py
 │       ├── document_processor.py  [Quality + Enhancement + OCR]
+│       ├── gdrive_downloader.py   [Google Drive folder download]
 │       ├── mismatch_detector.py   [Mismatch detection + Risk]
 │       ├── dispute_manager.py     [Dispute workflows]
 │       ├── report_generator.py    [Report generation]
@@ -36,7 +37,8 @@ rpr-cis-dashboard/
 │   ├── test_quality.py
 │   ├── test_ocr.py
 │   ├── test_mismatch.py
-│   └── test_dispute.py
+│   ├── test_dispute.py
+│   └── test_gdrive.py
 ├── data/
 │   ├── documents/                 [Uploaded docs]
 │   ├── database.db                [SQLite]
@@ -59,6 +61,9 @@ rpr-cis-dashboard/
 - numpy
 - flask
 - werkzeug
+- google-api-python-client
+- google-auth-httplib2
+- google-auth-oauthlib
 
 ### Implementation Status
 ✅ **COMPLETE** - All modules implemented and integrated
@@ -85,6 +90,75 @@ rpr-cis-dashboard/
 7. **ReportGenerator**: External/internal reports and compliance summaries
 8. **AuditTrail**: 7-year immutable audit trail with integrity verification
 9. **Flask UI**: Web interface for document upload, verification, and dispute management
+10. **GoogleDriveDownloader**: Download folders and files from Google Drive for document processing
+
+### Google Drive Integration
+
+The system includes a Google Drive downloader module to download documents from Google Drive folders for processing.
+
+#### Setup Google Drive API
+
+1. **Create Google Cloud Project:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+
+2. **Enable Google Drive API:**
+   - In the Cloud Console, go to "APIs & Services" > "Library"
+   - Search for "Google Drive API" and enable it
+
+3. **Create OAuth 2.0 Credentials:**
+   - Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth client ID"
+   - Select "Desktop app" as the application type
+   - Download the credentials JSON file
+   - Save it as `credentials.json` in the project root
+
+4. **First Run Authentication:**
+   - On first run, a browser window will open for Google authentication
+   - Sign in and grant access to Google Drive
+   - A `token.json` file will be created for subsequent runs
+
+#### Download Files from Google Drive
+
+**Using Command Line:**
+```bash
+# Download all files from a folder
+python src/modules/gdrive_downloader.py --folder-id <FOLDER_ID> --output input_folder/
+
+# Download only specific file types
+python src/modules/gdrive_downloader.py --folder-id <FOLDER_ID> --output input_folder/ --extensions jpg png pdf
+
+# Download recursively (including subfolders)
+python src/modules/gdrive_downloader.py --folder-id <FOLDER_ID> --output input_folder/ --recursive
+
+# Use custom credentials file
+python src/modules/gdrive_downloader.py --folder-id <FOLDER_ID> --output input_folder/ --credentials my_creds.json
+```
+
+**Getting the Folder ID:**
+- Navigate to your Google Drive folder in a browser
+- The URL will look like: `https://drive.google.com/drive/folders/1ABC123xyz`
+- The folder ID is the last part: `1ABC123xyz`
+
+**Using in Python:**
+```python
+from modules.gdrive_downloader import GoogleDriveDownloader
+
+# Initialize downloader
+downloader = GoogleDriveDownloader()
+
+# Authenticate (opens browser on first run)
+downloader.authenticate()
+
+# Download folder
+results = downloader.download_folder(
+    folder_id='your_folder_id',
+    output_path='input_folder/',
+    file_extensions=['.jpg', '.png', '.pdf']  # Optional filter
+)
+
+print(f"Downloaded: {results['downloaded']} files")
+```
 
 ### Validation
 - All core modules implemented with comprehensive error handling
