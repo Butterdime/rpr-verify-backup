@@ -56,15 +56,25 @@ FIREBASE_CREDENTIALS_PATH = os.environ.get(
     'firebase-credentials.json'
 )
 
+# Firebase Storage bucket from environment variable
+FIREBASE_STORAGE_BUCKET = os.environ.get(
+    'FIREBASE_STORAGE_BUCKET',
+    ''  # Set this in your .env file
+)
+
 # Initialize Firebase (call once at app startup)
 def initialize_firebase():
     """Initialize Firebase Admin SDK"""
-    if not firebase_admin._apps:
+    try:
+        # Check if already initialized
+        return firebase_admin.get_app()
+    except ValueError:
+        # Not initialized yet, proceed with initialization
         cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
         firebase_admin.initialize_app(cred, {
-            'storageBucket': 'your-project-id.appspot.com'  # Replace with your bucket
+            'storageBucket': FIREBASE_STORAGE_BUCKET
         })
-    return firebase_admin.get_app()
+        return firebase_admin.get_app()
 
 # Get Firestore client
 def get_firestore_client():
@@ -100,7 +110,7 @@ Update `src/database.py` to use Firestore:
 Firebase Firestore Database Module
 """
 
-from firebase_config import get_firestore_client
+from src.firebase_config import get_firestore_client
 from datetime import datetime
 from typing import Dict, List
 
@@ -164,19 +174,22 @@ Update document upload handling to use Firebase Storage:
 Firebase Storage Module
 """
 
-from firebase_config import get_storage_bucket
+from src.firebase_config import get_storage_bucket
 import os
 
-def upload_document_to_firebase(local_path: str, destination_path: str = None) -> str:
+def upload_document_to_firebase(local_path: str, destination_path: str = None, 
+                                 make_public: bool = False) -> str:
     """
     Upload a document to Firebase Storage
     
     Args:
         local_path: Path to local file
         destination_path: Path in Firebase Storage (optional)
+        make_public: Whether to make the file publicly accessible (default: False)
+                     WARNING: Only set to True for files that should be publicly accessible
     
     Returns:
-        Public URL of uploaded file
+        Public URL if make_public=True, otherwise signed URL
     """
     bucket = get_storage_bucket()
     
@@ -186,10 +199,14 @@ def upload_document_to_firebase(local_path: str, destination_path: str = None) -
     blob = bucket.blob(destination_path)
     blob.upload_from_filename(local_path)
     
-    # Make the file publicly accessible (optional)
-    blob.make_public()
-    
-    return blob.public_url
+    if make_public:
+        # WARNING: This makes the file publicly accessible to anyone with the URL
+        blob.make_public()
+        return blob.public_url
+    else:
+        # Return a signed URL that expires (more secure for sensitive documents)
+        from datetime import timedelta
+        return blob.generate_signed_url(expiration=timedelta(hours=1))
 
 def download_document_from_firebase(firebase_path: str, local_path: str):
     """
@@ -214,6 +231,7 @@ Firebase Authentication Module
 """
 
 from firebase_admin import auth
+from firebase_admin.auth import InvalidIdTokenError, ExpiredIdTokenError, RevokedIdTokenError
 from functools import wraps
 from flask import request, jsonify
 
@@ -222,8 +240,12 @@ def verify_firebase_token(id_token: str) -> dict:
     try:
         decoded_token = auth.verify_id_token(id_token)
         return decoded_token
-    except Exception as e:
-        raise ValueError(f"Invalid token: {str(e)}")
+    except InvalidIdTokenError as e:
+        raise ValueError(f"Invalid token format: {str(e)}")
+    except ExpiredIdTokenError as e:
+        raise ValueError(f"Token has expired: {str(e)}")
+    except RevokedIdTokenError as e:
+        raise ValueError(f"Token has been revoked: {str(e)}")
 
 def firebase_auth_required(f):
     """Decorator to require Firebase authentication"""
@@ -252,7 +274,7 @@ In `ui/app.py`, initialize Firebase at startup:
 
 ```python
 # Add at the top of the file
-from firebase_config import initialize_firebase
+from src.firebase_config import initialize_firebase
 
 # Initialize Firebase before other components
 initialize_firebase()
