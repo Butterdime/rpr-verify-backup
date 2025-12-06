@@ -6,7 +6,7 @@
     "start": "ng serve --port 4200",
     "build": "ng build",
     "build:local": "ng build",
-    "vercel-build": "npm run build && mkdir -p .vercel/output/static && cp -R dist/rpr-client-portal/* .vercel/output/static",
+    "vercel-build": "ng build --configuration production && node scripts/prepare-vercel-output.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint"
@@ -42,6 +42,7 @@
     "angular-eslint": "21.0.1",
     "autoprefixer": "^10.4.22",
     "eslint": "^9.39.1",
+    "fs-extra": "^11.3.2",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
